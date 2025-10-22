@@ -276,8 +276,7 @@
     bgMusic.volume = 0.7;
 
     const src = document.createElement("source");
-    src.src =
-      "https://cdn.jsdelivr.net/gh/Ruthramsocialmedia/Montfort-ControlBar@latest/yesterday.mp3";
+    src.src = "yesterday.mp3";
     src.type = "audio/mpeg";
     bgMusic.appendChild(src);
 
