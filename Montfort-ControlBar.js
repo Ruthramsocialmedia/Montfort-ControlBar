@@ -1,10 +1,7 @@
-// c-bar.js — Modern Glassmorphism Dock (Redesigned) + Pano Fetcher integration (default hidden)
 (async function () {
-  // ---- Guard: avoid double-injection ----
   const APP_ID = "dock-widget-root";
   if (document.getElementById(APP_ID)) return;
 
-  // ---- Inject external assets (fonts + icons) ----
   function ensureLink(href, rel = "stylesheet") {
     const exists = [...document.querySelectorAll(`link[rel="${rel}"]`)].some(
       (l) => l.href.includes(href)
@@ -23,14 +20,12 @@
     "https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css"
   );
 
-  // ---- Inject CSS (modern glassmorphism) ----
   const css = `
 * { 
   font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; 
   box-sizing: border-box;
 }
 
-/* Glassmorphism Dock Container */
 #${APP_ID} .dock-container {
   position: fixed;
   left: 50%;
@@ -49,7 +44,7 @@
   gap: 0.5rem;
   padding: 0.75rem;
   border-radius: 1.5rem;
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.70);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -71,7 +66,6 @@
   }
 }
 
-/* Modern Dock Items */
 #${APP_ID} .dock-item {
   position: relative;
   width: 52px;
@@ -114,7 +108,6 @@
   transform: none !important;
 }
 
-/* Icon Styling */
 #${APP_ID} .dock-icon {
   font-size: 1.4rem;
   color: #1a1a1a;
@@ -131,7 +124,6 @@
   color: #9F1C20;
 }
 
-/* SVG Icon Styling */
 #${APP_ID} .dock-icon-img {
   width: 22px;
   height: 22px;
@@ -149,7 +141,6 @@
   filter: brightness(0) sepia(1) saturate(5) hue-rotate(340deg);
 }
 
-/* Modern Label */
 #${APP_ID} .dock-label {
   position: absolute;
   top: -3rem;
@@ -176,7 +167,6 @@
   transform: translateX(-50%) translateY(0);
 }
 
-/* Active State Indicator */
 #${APP_ID} .dock-item.is-active::after {
   content: '';
   position: absolute;
@@ -196,7 +186,6 @@
   50% { opacity: 1; transform: translateX(-50%) scale(1.2); }
 }
 
-/* Divider between functional groups */
 #${APP_ID} .dock-divider {
   width: 1px;
   height: 24px;
@@ -207,23 +196,24 @@
   margin: 0 0.25rem;
 }
 
-/* Utility */
 .hidden-by-dock { display: none !important; }
 
-/* Mobile Responsive */
 @media (max-width: 768px) {
   #${APP_ID} .dock-container {
     bottom: 1rem;
   }
+  
   #${APP_ID} .dock-panel {
     padding: 0.5rem;
     border-radius: 1.25rem;
   }
+  
   #${APP_ID} .dock-item {
     width: 48px;
     height: 48px;
     border-radius: 12px;
   }
+  
   #${APP_ID} .dock-icon {
     font-size: 1.3rem;
   }
@@ -235,13 +225,11 @@
   styleEl.textContent = css;
   document.head.appendChild(styleEl);
 
-  // ---- Inject Modern HTML Structure ----
   const root = document.createElement("div");
   root.id = APP_ID;
   root.innerHTML = `
     <div class="dock-container">
       <div class="dock-panel" role="toolbar" aria-label="Modern Dock Menu">
-        <!-- Navigation Group -->
         <button class="dock-item" data-action="home" data-url="" aria-label="Home" title="Home">
           <i class="ri-home-5-line dock-icon" aria-hidden="true"></i>
           <span class="dock-label">Home</span>
@@ -249,22 +237,19 @@
 
         <button class="dock-item" data-action="apps" aria-label="Apps" title="Apps" aria-pressed="false">
           <i class="ri-apps-2-line dock-icon" aria-hidden="true"></i>
-          <span class="dock-label">Apps</span>
+          <span class="dock-label">Others</span>
         </button>
 
-        <!-- Tools Group -->
         <button class="dock-item" id="dock-searchToggle" aria-label="Search" title="Search" aria-pressed="false">
           <i class="ri-search-eye-line dock-icon" aria-hidden="true"></i>
           <span class="dock-label">Search</span>
         </button>
 
-        <!-- Pano button (lazy loads FinalPano-Fetcher.js; default hidden) -->
-        <button class="dock-item" data-action="panolist" aria-label="Panorama" title="Panorama" aria-pressed="false">
+        <button class="dock-item" data-action="panolist" data-tags="panolist" aria-label="Pano list" title="Pano list">
           <img src="https://uandi.media/Virtual-tour/Joy-University/Asset%201.svg" alt="" class="dock-icon-img" aria-hidden="true" />
-          <span class="dock-label">Pano</span>
+          <span class="dock-label">Pano List</span>
         </button>
 
-        <!-- Controls Group -->
         <button class="dock-item" id="dock-muteToggle" aria-label="Mute" title="Mute">
           <i class="ri-volume-up-line dock-icon" aria-hidden="true"></i>
           <span class="dock-label">Mute</span>
@@ -279,13 +264,8 @@
   `;
   document.body.appendChild(root);
 
-  // Helper: element refs
   const appsBtn = root.querySelector('.dock-item[data-action="apps"]');
-  const panoBtn = root.querySelector('.dock-item[data-action="panolist"]');
 
-  // =====================================================
-  // BACKGROUND MUSIC — Modernized with better error handling
-  // =====================================================
   let bgMusic = document.getElementById("bgMusic");
   if (!bgMusic) {
     bgMusic = document.createElement("audio");
@@ -309,30 +289,41 @@
   }
 
   const tryStart = async () => {
-    try { await bgMusic.play(); } 
-    catch { /* autoplay may be blocked until gesture */ }
+    try {
+      await bgMusic.play();
+    } catch (err) {
+      console.log("Autoplay prevented - waiting for user interaction");
+    }
   };
+
   tryStart();
 
   const kickstart = async () => {
     if (bgMusic.paused) {
-      try { await bgMusic.play(); } catch {}
+      try {
+        await bgMusic.play();
+        console.log("Background music started after user interaction");
+      } catch (err) {
+        console.warn("Could not start background music:", err);
+      }
     }
     window.removeEventListener("pointerdown", kickstart, { capture: true });
     window.removeEventListener("keydown", kickstart, { capture: true });
   };
-  window.addEventListener("pointerdown", kickstart, { once: true, capture: true });
+
+  window.addEventListener("pointerdown", kickstart, {
+    once: true,
+    capture: true,
+  });
   window.addEventListener("keydown", kickstart, { once: true, capture: true });
 
-  // =====================================================
-  // MODERN MUTE TOGGLE
-  // =====================================================
   const muteToggle = root.querySelector("#dock-muteToggle");
   const muteIcon = muteToggle.querySelector(".dock-icon");
   const muteLabel = muteToggle.querySelector(".dock-label");
 
   function setMutedUI(muted) {
     muteToggle.classList.toggle("is-active", muted);
+
     if (muted) {
       muteIcon.className = "ri-volume-mute-line dock-icon";
       muteToggle.title = "Unmute";
@@ -345,19 +336,21 @@
       muteLabel.textContent = "Mute";
     }
   }
+
   setMutedUI(!!bgMusic.muted);
 
   muteToggle.addEventListener("click", () => {
     bgMusic.muted = !bgMusic.muted;
     setMutedUI(bgMusic.muted);
+
     muteToggle.style.transform = "scale(0.95)";
-    setTimeout(() => (muteToggle.style.transform = ""), 150);
+    setTimeout(() => {
+      muteToggle.style.transform = "";
+    }, 150);
   });
+
   bgMusic.addEventListener("volumechange", () => setMutedUI(bgMusic.muted));
 
-  // =====================================================
-  // ENHANCED SEARCH TOGGLE
-  // =====================================================
   const SEARCH_SELECTORS = ["#container_search"];
 
   function ensureHiddenOnLoad(selectors) {
@@ -366,7 +359,9 @@
       nodes.forEach((el) => el.classList.add("hidden-by-dock"));
       return nodes.length > 0;
     };
+
     if (hideNow()) return;
+
     const mo = new MutationObserver(() => {
       if (hideNow()) mo.disconnect();
     });
@@ -379,10 +374,12 @@
       console.warn("[Modern Dock] No elements matched selectors:", selectors);
       return false;
     }
+
     nodes.forEach((el) => {
       el.classList.toggle("hidden-by-dock");
       el.style.transition = "opacity 0.3s ease, transform 0.3s ease";
     });
+
     return !nodes[0].classList.contains("hidden-by-dock");
   }
 
@@ -397,9 +394,6 @@
   ensureHiddenOnLoad(SEARCH_SELECTORS);
   wireToggle(root.querySelector("#dock-searchToggle"), SEARCH_SELECTORS);
 
-  // =====================================================
-  // MODERN FULLSCREEN
-  // =====================================================
   const fullscreenToggle = root.querySelector("#dock-fullscreenToggle");
   const fullscreenIcon = fullscreenToggle.querySelector(".dock-icon");
   const fullscreenLabel = fullscreenToggle.querySelector(".dock-label");
@@ -412,8 +406,10 @@
       document.msFullscreenElement
     );
   }
+
   function updateFsUI(active) {
     fullscreenToggle.classList.toggle("is-active", active);
+
     if (active) {
       fullscreenIcon.className = "ri-fullscreen-exit-line dock-icon";
       fullscreenLabel.textContent = "Exit Fullscreen";
@@ -424,6 +420,7 @@
       fullscreenToggle.title = "Fullscreen";
     }
   }
+
   async function enterFs() {
     const el = document.documentElement;
     try {
@@ -431,25 +428,35 @@
       else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
       else if (el.mozRequestFullScreen) await el.mozRequestFullScreen();
       else if (el.msRequestFullscreen) await el.msRequestFullscreen();
-    } catch (err) { console.warn("Fullscreen failed:", err); }
+    } catch (err) {
+      console.warn("Fullscreen failed:", err);
+    }
   }
+
   async function exitFs() {
     try {
       if (document.exitFullscreen) await document.exitFullscreen();
-      else if (document.webkitExitFullscreen) await document.webkitExitFullscreen();
-      else if (document.mozCancelFullScreen) await document.mozCancelFullScreen();
+      else if (document.webkitExitFullscreen)
+        await document.webkitExitFullscreen();
+      else if (document.mozCancelFullScreen)
+        await document.mozCancelFullScreen();
       else if (document.msExitFullscreen) await document.msExitFullscreen();
-    } catch (err) { console.warn("Exit fullscreen failed:", err); }
+    } catch (err) {
+      console.warn("Exit fullscreen failed:", err);
+    }
   }
+
   fullscreenToggle.addEventListener("click", () => {
     inFullscreen() ? exitFs() : enterFs();
   });
-  document.addEventListener("fullscreenchange", () => updateFsUI(inFullscreen()));
-  document.addEventListener("webkitfullscreenchange", () => updateFsUI(inFullscreen()));
 
-  // =====================================================
-  // ENHANCED APPS MENU with modern loading states
-  // =====================================================
+  document.addEventListener("fullscreenchange", () =>
+    updateFsUI(inFullscreen())
+  );
+  document.addEventListener("webkitfullscreenchange", () =>
+    updateFsUI(inFullscreen())
+  );
+
   const FOR_ICONS_SRC = "./for-icons.js";
   const WIDGET_ID = "cards-widget-root";
   let appsOpen = false;
@@ -458,11 +465,34 @@
   function hasWidget() {
     return !!document.getElementById(WIDGET_ID);
   }
+
+  function destroyWidgetIfAny() {
+    try {
+      if (
+        window.CARDS_WIDGET &&
+        typeof window.CARDS_WIDGET.destroy === "function"
+      ) {
+        window.CARDS_WIDGET.destroy();
+      } else {
+        const el = document.getElementById(WIDGET_ID);
+        if (el) el.remove();
+      }
+    } catch (e) {
+      console.warn("[Modern Dock] Widget cleanup:", e);
+      const el = document.getElementById(WIDGET_ID);
+      if (el) el.remove();
+    }
+  }
+
   function setAppsBtnState(active) {
     appsOpen = !!active;
     appsBtn.classList.toggle("is-active", appsOpen);
     appsBtn.setAttribute("aria-pressed", appsOpen ? "true" : "false");
   }
+
+  window.addEventListener("CARDS_WIDGET:opened", () => setAppsBtnState(true));
+  window.addEventListener("CARDS_WIDGET:closed", () => setAppsBtnState(false));
+
   function attachWidgetHooks() {
     if (window.CARDS_WIDGET) {
       if (typeof window.CARDS_WIDGET.onOpen === "function") {
@@ -473,10 +503,13 @@
       }
     }
   }
-  const appsMo = new MutationObserver(() => {
-    if (!hasWidget() && appsOpen) setAppsBtnState(false);
+
+  const mo = new MutationObserver((mutations) => {
+    if (!hasWidget() && appsOpen) {
+      setAppsBtnState(false);
+    }
   });
-  appsMo.observe(document.documentElement, { childList: true, subtree: true });
+  mo.observe(document.documentElement, { childList: true, subtree: true });
 
   async function ensureForIconsLoaded() {
     if (window.CARDS_WIDGET || hasWidget()) return true;
@@ -489,6 +522,7 @@
       const alreadyTag = [...document.querySelectorAll("script[src]")].some(
         (s) => s.src.includes(FOR_ICONS_SRC)
       );
+
       if (!alreadyTag) {
         await new Promise((resolve, reject) => {
           const s = document.createElement("script");
@@ -499,8 +533,10 @@
           document.body.appendChild(s);
         });
       }
+
       await new Promise((r) => setTimeout(r, 100));
       attachWidgetHooks();
+
       return window.CARDS_WIDGET || hasWidget();
     } catch (err) {
       console.error("[Modern Dock] Failed to load apps:", err);
@@ -516,164 +552,62 @@
       appsBtn.disabled = true;
       const ok = await ensureForIconsLoaded();
       appsBtn.disabled = false;
+
       if (!ok) return;
 
-      if (window.CARDS_WIDGET?.toggle) window.CARDS_WIDGET.toggle();
-      else document.getElementById(WIDGET_ID)?.classList.add("active");
+      if (
+        window.CARDS_WIDGET &&
+        typeof window.CARDS_WIDGET.toggle === "function"
+      ) {
+        window.CARDS_WIDGET.toggle();
+      } else {
+        const el = document.getElementById(WIDGET_ID);
+        if (el) el.classList.add("active");
+      }
       setAppsBtnState(true);
     } else {
-      if (window.CARDS_WIDGET?.toggle) window.CARDS_WIDGET.toggle();
-      else document.getElementById(WIDGET_ID)?.classList.remove("active");
+      if (
+        window.CARDS_WIDGET &&
+        typeof window.CARDS_WIDGET.toggle === "function"
+      ) {
+        window.CARDS_WIDGET.toggle();
+      } else if (hasWidget()) {
+        document.getElementById(WIDGET_ID).classList.remove("active");
+      }
       setAppsBtnState(false);
     }
   }
+
   appsBtn.addEventListener("click", toggleApps);
 
-  // =====================================================
-  // PANORAMA FETCHER — lazy-load + toggle (default hidden)
-  // =====================================================
-  const PANO_FETCHER_SRC = "./FinalPano-Fetcher.js"; // like FOR_ICONS default pattern
-  let panoBusy = false;
-
-  // Selectors that FinalPano-Fetcher.js creates
-  const PANO_HEADER_SEL = ".pano-glass-header";
-  const PANO_SIDEBAR_SEL = ".pano-glass-sidebar";
-
-  function getPanoNodes() {
-    const header = document.querySelector(PANO_HEADER_SEL);
-    const sidebar = document.querySelector(PANO_SIDEBAR_SEL);
-    return { header, sidebar };
-  }
-  function hasPanoDOM() {
-    const { header, sidebar } = getPanoNodes();
-    return !!(header || sidebar);
-  }
-  function isPanoVisible() {
-    const { header, sidebar } = getPanoNodes();
-    const any = [header, sidebar].filter(Boolean);
-    if (!any.length) return false;
-    return any.some((el) => el.style.display !== "none");
-  }
- function setPanoDisplay(show) {
-  const { header, sidebar } = getPanoNodes();
-  const headVal = show ? "flex"  : "none";  // header is a flex row
-  const sideVal = show ? "block" : "none";  // sidebar must remain block
-  if (header)  header.style.display  = headVal;
-  if (sidebar) sidebar.style.display = sideVal;
-  panoBtn.classList.toggle("is-active", !!show);
-  panoBtn.setAttribute("aria-pressed", show ? "true" : "false");
-}
-
-
-  async function loadPanoScript(forceReloadIfRemoved = false) {
-    // If DOM exists, just ensure hidden and return true
-    if (hasPanoDOM() && !forceReloadIfRemoved) return true;
-
-    // If DOM was removed (user clicked ✕), reload script with cache-bust
-    if (panoBusy) return false;
-    panoBusy = true;
-    panoBtn.style.opacity = "0.7";
-
-    try {
-      const srcUrl = forceReloadIfRemoved
-        ? `${PANO_FETCHER_SRC}?v=${Date.now()}`
-        : ( // if no DOM AND no tag yet, add; if tag exists but DOM gone, also add with cache-bust
-          [...document.querySelectorAll("script[src]")].some((s) => s.src.includes(PANO_FETCHER_SRC))
-            ? `${PANO_FETCHER_SRC}?v=${Date.now()}`
-            : PANO_FETCHER_SRC
-        );
-
-      await new Promise((resolve, reject) => {
-        const s = document.createElement("script");
-        s.src = srcUrl;
-        s.async = true;
-        s.onload = resolve;
-        s.onerror = reject;
-        document.body.appendChild(s);
-      });
-
-      // Give the script time to render its header + sidebar
-      await new Promise((r) => setTimeout(r, 150));
-
-      // Default hidden after load
-      setPanoDisplay(false);
-      return true;
-    } catch (err) {
-      console.error("[Modern Dock] Failed to load panorama fetcher:", err);
-      return false;
-    } finally {
-      panoBusy = false;
-      panoBtn.style.opacity = "1";
-    }
-  }
-
-  async function ensurePanoLoaded() {
-    if (hasPanoDOM()) return true;
-    return loadPanoScript(true);
-  }
-
-  async function togglePano() {
-    // If DOM absent (first use or user closed with ✕), (re)load then show
-    if (!hasPanoDOM()) {
-      panoBtn.disabled = true;
-      const ok = await ensurePanoLoaded();
-      panoBtn.disabled = false;
-      if (!ok) return;
-      setPanoDisplay(true);
-      return;
-    }
-    // If present, just toggle visibility
-    const shown = isPanoVisible();
-    setPanoDisplay(!shown);
-  }
-
-  // Observe DOM to sync button state if user hits the ✕ (which removes nodes)
-  const panoMo = new MutationObserver(() => {
-    if (!hasPanoDOM()) {
-      panoBtn.classList.remove("is-active");
-      panoBtn.setAttribute("aria-pressed", "false");
-      return;
-    }
-    const shown = isPanoVisible();
-    panoBtn.classList.toggle("is-active", shown);
-    panoBtn.setAttribute("aria-pressed", shown ? "true" : "false");
-  });
-  panoMo.observe(document.documentElement, { childList: true, subtree: true });
-
-  // Wire Pano button
-  panoBtn.addEventListener("click", () => {
-    panoBtn.style.transform = "scale(0.95)";
-    setTimeout(() => (panoBtn.style.transform = ""), 150);
-    togglePano();
-  });
-
-  // =====================================================
-  // ENHANCED TAG TOGGLING (kept for other buttons using data-tags)
-  // =====================================================
   const tagVisibility = new Map();
+
   function setTagsVisible(tags, visible) {
     const arr = Array.isArray(tags) ? tags : [tags];
-    if (typeof tour === "undefined" || !tour?.setComponentsVisibilityByTags) return;
+    if (typeof tour === "undefined" || !tour?.setComponentsVisibilityByTags)
+      return;
+
     tour.setComponentsVisibilityByTags(arr, visible);
     arr.forEach((tag) => tagVisibility.set(tag, visible));
   }
+
   function toggleTags(tags) {
     const arr = Array.isArray(tags) ? tags : [tags];
     const anyVisible = arr.some((tag) => tagVisibility.get(tag) === true);
     setTagsVisible(arr, !anyVisible);
   }
 
-  // Button actions (note: panolist handled above)
   root.querySelectorAll(".dock-item[data-action]").forEach((btn) => {
     const action = btn.getAttribute("data-action");
-    if (action === "panolist") return; // handled separately
 
     btn.addEventListener("click", () => {
       const tagsAttr = btn.getAttribute("data-tags");
       const url = btn.getAttribute("data-url");
 
       btn.style.transform = "scale(0.95)";
-      setTimeout(() => { btn.style.transform = ""; }, 150);
+      setTimeout(() => {
+        btn.style.transform = "";
+      }, 150);
 
       switch (action) {
         case "home":
@@ -681,7 +615,10 @@
           break;
         default:
           if (tagsAttr) {
-            const tags = tagsAttr.split(",").map((s) => s.trim()).filter(Boolean);
+            const tags = tagsAttr
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean);
             toggleTags(tags);
             btn.classList.toggle("is-active");
           }
@@ -690,23 +627,18 @@
     });
   });
 
-  // =====================================================
-  // MODERN PUBLIC API
-  // =====================================================
   window.MODERN_DOCK = {
     musicEl: () => bgMusic,
     toggleApps: () => toggleApps(),
-    togglePano: () => togglePano(),
     show: () => (root.querySelector(".dock-panel").style.display = "flex"),
     hide: () => (root.querySelector(".dock-panel").style.display = "none"),
     destroy: () => {
       styleEl.remove();
       root.remove();
-      appsMo.disconnect();
-      panoMo.disconnect();
+      mo.disconnect();
       delete window.MODERN_DOCK;
     },
   };
 
-  console.log("🎯 Modern Glassmorphism Dock loaded successfully (+ Pano Fetcher, default hidden)");
+  console.log("🎯 Modern Glassmorphism Dock loaded successfully");
 })();
